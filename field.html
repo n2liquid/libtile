@@ -1,0 +1,153 @@
+<!doctype html>
+<meta charset="utf-8">
+<!--
+	Copyright (C) 2013 Guilherme Vieira
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<style>
+	*
+	{
+		box-sizing: border-box;
+	}
+	html,
+	body
+	{
+		height: 100%;
+	}
+	body
+	{
+		margin: 0;
+	}
+	.field
+	{
+		width: 640px;
+		height: 480px;
+		margin: 0 auto;
+		overflow: auto;
+		background-color: beige;
+	}
+	.ground
+	{
+		position: relative;
+		overflow: hidden;
+		background-image: url('http://i.imgur.com/XzyYw0O.png');
+	}
+	.tile
+	{
+		position: absolute;
+		width: 32px;
+		height: 32px;
+		background-image: url('http://i.imgur.com/ieNkIii.png');
+		background-clip: border;
+	}
+</style>
+<script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script src="dom-control.js"></script>
+<script>
+	function setGroundSize($element, width, height)
+	{
+		$element.css('width', (width * 32) + 'px');
+		$element.css('height', (height * 32) + 'px');
+	}
+	function setPosition($element, x, y, layer)
+	{
+		$element.css('left', (x * 32) + 'px');
+		$element.css('top', (y * 32) + 'px');
+		$element.css('z-index', layer);
+	}
+	function setTile($element, x, y)
+	{
+		$element.css
+		(
+			'background-position',
+			(-x * 32) + 'px ' + (-y * 32) + 'px'
+		);
+	}
+	function updateGround($element)
+	{
+		var width = $element.attr('width') || 1;
+		var height = $element.attr('height') || 1;
+		setGroundSize($element, width, height);
+	}
+	updateGround.attributes = ['width', 'height'];
+	function updateTile($element)
+	{
+		var x = $element.attr('x') || 0;
+		var y = $element.attr('y') || 0;
+		var layer = $element.attr('layer') || 0;
+		var tx = $element.attr('tx') || 0;
+		var ty = $element.attr('ty') || 0;
+		setPosition($element, x, y, layer);
+		setTile($element, tx, ty);
+	}
+	updateTile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
+	dom_control
+	(
+		'.ground', function(event, element, attribute)
+		{
+			if(event === 'removed')
+			{
+				return;
+			}
+			if(event === 'mutated' && updateGround.attributes.indexOf(attribute) === -1)
+			{
+				return;
+			}
+			updateGround($(element));
+		}
+	);
+	dom_control
+	(
+		'.tile', function(event, element, attribute)
+		{
+			if(event === 'removed')
+			{
+				return;
+			}
+			if(event === 'mutated' && updateTile.attributes.indexOf(attribute) === -1)
+			{
+				return;
+			}
+			updateTile($(element));
+		}
+	);
+</script>
+<div style="margin: 0 100px; font-style: italic">
+	<p>
+		<strong>
+			Disclaimer:
+		</strong>
+		This demo is intended purely for educational &amp; research purposes. Use of copyrighted material is therefore under Fair Use.
+	</p>
+	<p>
+		All rights of the images used in this demo reserved exclusively to ENTERBRAIN.
+	</p>
+</div>
+<div class="field">
+	<div class="ground" width="20" height="15">
+		<div class="tile" x="2" y="1" tx="4" ty="0"></div>
+		<div class="tile" x="4" y="1" tx="4" ty="0"></div>
+		<div class="tile" x="6" y="1" tx="4" ty="0"></div>
+		<div class="tile" x="8" y="1" tx="4" ty="0"></div>
+		<div class="tile" x="2" y="3" tx="4" ty="0"></div>
+		<div class="tile" x="4" y="3" tx="5" ty="0"></div>
+		<div class="tile" x="6" y="3" tx="4" ty="0"></div>
+		<div class="tile" x="8" y="3" tx="4" ty="0"></div>
+		<div class="tile" x="2" y="5" tx="4" ty="0"></div>
+		<div class="tile" x="4" y="5" tx="4" ty="0"></div>
+		<div class="tile" x="6" y="5" tx="4" ty="0"></div>
+		<div class="tile" x="8" y="5" tx="4" ty="0"></div>
+	</div>
+</div>
