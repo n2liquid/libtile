@@ -51,33 +51,20 @@ function updateTile($element)
 	setTile($element, tx, ty);
 }
 updateTile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
-dom_control
-(
-	'.ground', function(event, element, attribute)
+function make_update_handler(update_fn)
+{
+	return function(event, element, attribute)
 	{
 		if(event === 'removed')
 		{
 			return;
 		}
-		if(event === 'mutated' && updateGround.attributes.indexOf(attribute) === -1)
+		if(event === 'mutated' && update_fn.attributes.indexOf(attribute) === -1)
 		{
 			return;
 		}
-		updateGround($(element));
-	}
-);
-dom_control
-(
-	'.tile', function(event, element, attribute)
-	{
-		if(event === 'removed')
-		{
-			return;
-		}
-		if(event === 'mutated' && updateTile.attributes.indexOf(attribute) === -1)
-		{
-			return;
-		}
-		updateTile($(element));
-	}
-);
+		update_fn($(element));
+	};
+}
+dom_control('.ground', make_update_handler(updateGround));
+dom_control('.tile', make_update_handler(updateTile));
