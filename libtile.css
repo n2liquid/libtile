@@ -1,0 +1,18 @@
+.field
+{
+	overflow: auto;
+	background-color: beige;
+}
+.ground
+{
+	position: relative;
+	overflow: hidden;
+}
+.tile
+{
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	box-sizing: border-box;
+	background-clip: border;
+}
