@@ -55,75 +55,7 @@
 </style>
 <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
 <script src="https://rawgithub.com/n2liquid/live-dom-control/master/live-dom-control.js"></script>
-<script>
-	function setGroundSize($element, width, height)
-	{
-		$element.css('width', (width * 32) + 'px');
-		$element.css('height', (height * 32) + 'px');
-	}
-	function setPosition($element, x, y, layer)
-	{
-		$element.css('left', (x * 32) + 'px');
-		$element.css('top', (y * 32) + 'px');
-		$element.css('z-index', layer);
-	}
-	function setTile($element, x, y)
-	{
-		$element.css
-		(
-			'background-position',
-			(-x * 32) + 'px ' + (-y * 32) + 'px'
-		);
-	}
-	function updateGround($element)
-	{
-		var width = $element.attr('width') || 1;
-		var height = $element.attr('height') || 1;
-		setGroundSize($element, width, height);
-	}
-	updateGround.attributes = ['width', 'height'];
-	function updateTile($element)
-	{
-		var x = $element.attr('x') || 0;
-		var y = $element.attr('y') || 0;
-		var layer = $element.attr('layer') || 0;
-		var tx = $element.attr('tx') || 0;
-		var ty = $element.attr('ty') || 0;
-		setPosition($element, x, y, layer);
-		setTile($element, tx, ty);
-	}
-	updateTile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
-	dom_control
-	(
-		'.ground', function(event, element, attribute)
-		{
-			if(event === 'removed')
-			{
-				return;
-			}
-			if(event === 'mutated' && updateGround.attributes.indexOf(attribute) === -1)
-			{
-				return;
-			}
-			updateGround($(element));
-		}
-	);
-	dom_control
-	(
-		'.tile', function(event, element, attribute)
-		{
-			if(event === 'removed')
-			{
-				return;
-			}
-			if(event === 'mutated' && updateTile.attributes.indexOf(attribute) === -1)
-			{
-				return;
-			}
-			updateTile($(element));
-		}
-	);
-</script>
+<script src="libtile.js"></script>
 <div style="margin: 0 100px; font-style: italic">
 	<p>
 		<strong>
