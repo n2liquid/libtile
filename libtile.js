@@ -14,18 +14,18 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-function setGroundSize($element, width, height)
+function set_ground_size($element, width, height)
 {
 	$element.css('width', (width * 32) + 'px');
 	$element.css('height', (height * 32) + 'px');
 }
-function setPosition($element, x, y, layer)
+function set_position($element, x, y, layer)
 {
 	$element.css('left', (x * 32) + 'px');
 	$element.css('top', (y * 32) + 'px');
 	$element.css('z-index', layer);
 }
-function setTile($element, x, y)
+function set_tile($element, x, y)
 {
 	$element.css
 	(
@@ -33,13 +33,13 @@ function setTile($element, x, y)
 		(-x * 32) + 'px ' + (-y * 32) + 'px'
 	);
 }
-function updateGround($element)
+function update_ground($element)
 {
 	var width = $element.attr('width') || 1;
 	var height = $element.attr('height') || 1;
-	setGroundSize($element, width, height);
+	set_ground_size($element, width, height);
 }
-updateGround.attributes = ['width', 'height'];
+update_ground.attributes = ['width', 'height'];
 function updateTile($element)
 {
 	var x = $element.attr('x') || 0;
@@ -47,8 +47,8 @@ function updateTile($element)
 	var layer = $element.attr('layer') || 0;
 	var tx = $element.attr('tx') || 0;
 	var ty = $element.attr('ty') || 0;
-	setPosition($element, x, y, layer);
-	setTile($element, tx, ty);
+	set_position($element, x, y, layer);
+	set_tile($element, tx, ty);
 }
 updateTile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
 function make_update_handler(update_fn)
@@ -66,5 +66,5 @@ function make_update_handler(update_fn)
 		update_fn($(element));
 	};
 }
-dom_control('.ground', make_update_handler(updateGround));
+dom_control('.ground', make_update_handler(update_ground));
 dom_control('.tile', make_update_handler(updateTile));
