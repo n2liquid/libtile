@@ -36,30 +36,30 @@ function set_tile($element, x, y)
 		(-x * 32) + 'px ' + (-y * 32) + 'px'
 	);
 }
-function update_ground($element)
+function update_ground(event, $element)
 {
 	var width = $element.attr('width') || 1;
 	var height = $element.attr('height') || 1;
 	set_ground_size($element, width, height);
 }
 update_ground.attributes = ['width', 'height'];
-function update_snapped($element)
+function update_snapped(event, $element, attribute, old_value)
 {
 	var x = $element.attr('x') || 0;
 	var y = $element.attr('y') || 0;
 	set_position($element, x, y);
 }
 update_snapped.attributes = ['x', 'y'];
-function update_layered($element)
+function update_layered(event, $element)
 {
 	var layer = $element.attr('layer') || 0;
 	set_layer($element, layer);
 }
 update_layered.attributes = ['layer'];
-function update_tile($element)
+function update_tile(event, $element)
 {
-	update_snapped($element);
-	update_layered($element);
+	update_snapped(event, $element);
+	update_layered(event, $element);
 	if(parseFloat($element.css('transition-duration')) === 0)
 	{
 		var tx = $element.attr('tx') || 0;
@@ -68,10 +68,6 @@ function update_tile($element)
 	}
 }
 update_tile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
-function update_animated($element)
-{
-}
-update_animated.attributes = [];
 function calculate_transition_duration($element)
 {
 	var frames = $element.attr('frames');
@@ -80,11 +76,11 @@ function calculate_transition_duration($element)
 	var frame_duration_scalar = parseFloat(frame_duration) || 0;
 	return (frame_duration_scalar * frames) + frame_duration_unit;
 }
-function update_tile_animation($element)
+function update_tile_animation(event, $element)
 {
 	if(!$element.data('animating'))
 	{
-		$element.on('transitionend.animated-tile', update_tile_animation.bind(null, $element));
+		$element.on('transitionend.animated-tile', update_tile_animation.bind(null, event, $element));
 	}
 	try
 	{
@@ -92,7 +88,7 @@ function update_tile_animation($element)
 		var sheet_orientation = $element.attr('sheet-orientation') || 'horizontal';
 		var transition_duration = calculate_transition_duration($element);
 		$element.css('transition', 'background-position 0s');
-		update_tile($element);
+		update_tile(event, $element);
 		$element.css('background-position'); // force "flush"
 		if(parseFloat(transition_duration) === 0)
 		{
@@ -124,7 +120,7 @@ function update_tile_animation($element)
 update_tile_animation.attributes = ['frames', 'frame-duration', 'sheet-orientation'];
 function make_update_handler(update_fn)
 {
-	return function(event, element, attribute)
+	return function(event, element, attribute, old_value)
 	{
 		if(event === 'removed')
 		{
@@ -134,7 +130,7 @@ function make_update_handler(update_fn)
 		{
 			return;
 		}
-		update_fn($(element));
+		update_fn(event, $(element), attribute, old_value);
 	};
 }
 dom_control('.ground', make_update_handler(update_ground));
