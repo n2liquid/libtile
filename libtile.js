@@ -56,18 +56,24 @@ function update_layered(event, $element)
 	set_layer($element, layer);
 }
 update_layered.attributes = ['layer'];
-function update_tile(event, $element)
+function update_tile(event, $element, attribute, old_value, force_set)
+{
+	var tx = $element.attr('tx') || 0;
+	var ty = $element.attr('ty') || 0;
+	if($element.data('animating') && !force_set)
+	{
+		return;
+	}
+	set_tile($element, tx, ty);
+}
+update_tile.attributes = ['tx', 'ty'];
+function update_snapped_layered_tile(event, $element)
 {
 	update_snapped(event, $element);
 	update_layered(event, $element);
-	if(parseFloat($element.css('transition-duration')) === 0)
-	{
-		var tx = $element.attr('tx') || 0;
-		var ty = $element.attr('ty') || 0;
-		set_tile($element, tx, ty);
-	}
+	update_tile(event, $element);
 }
-update_tile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
+update_snapped_layered_tile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
 function calculate_transition_duration($element)
 {
 	var frames = $element.attr('frames');
@@ -88,7 +94,8 @@ function update_tile_animation(event, $element)
 		var sheet_orientation = $element.attr('sheet-orientation') || 'horizontal';
 		var transition_duration = calculate_transition_duration($element);
 		$element.css('transition', 'background-position 0s');
-		update_tile(event, $element);
+		update_tile(event, $element, null, null, true);
+		console.log('set');
 		$element.css('background-position'); // force "flush"
 		if(parseFloat(transition_duration) === 0)
 		{
@@ -117,7 +124,7 @@ function update_tile_animation(event, $element)
 		$element.data('animating', false);
 	}
 }
-update_tile_animation.attributes = ['frames', 'frame-duration', 'sheet-orientation'];
+update_tile_animation.attributes = ['tx', 'ty', 'frames', 'frame-duration', 'sheet-orientation'];
 function make_update_handler(update_fn)
 {
 	return function(event, element, attribute, old_value)
@@ -136,5 +143,5 @@ function make_update_handler(update_fn)
 dom_control('.ground', make_update_handler(update_ground));
 dom_control('.snapped', make_update_handler(update_snapped));
 dom_control('.layered', make_update_handler(update_layered));
-dom_control('.tile', make_update_handler(update_tile));
+dom_control('.tile', make_update_handler(update_snapped_layered_tile));
 dom_control('.tile[frames]', make_update_handler(update_tile_animation));
