@@ -19,9 +19,13 @@
 {
 	background-clip: border;
 }
-.sprite.tall
+.sprite.tall,
+.character
 {
 	height: 48px;
 	margin-top: -16px;
+}
+.character
+{
 	background-image: url('http://i.imgur.com/EUdDa8b.png');
 }

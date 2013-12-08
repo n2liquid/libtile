@@ -120,6 +120,42 @@ function update_sprite_animation(event, $element)
 	}
 }
 update_sprite_animation.attributes = ['sx', 'sy', 'frames', 'frame-duration', 'sheet-orientation'];
+var t = 0;
+function update_character(event, $element, attribute, old_value)
+{
+	if(event === 'added' || event === 'exists' || attribute === 'direction')
+	{
+		var direction = $element.attr('direction');
+		if(!direction)
+		{
+			$element.attr('direction', direction = 'down');
+		}
+		var sys =
+		{
+			'down': 0,
+			'left': 1,
+			'right': 2,
+			'up': 3
+		};
+		$element.attr('sy', sys[direction]);
+	}
+	if(event === 'added' || event === 'exists' || attribute === 'class')
+	{
+		if($element.is('.walking'))
+		{
+			$element.attr('frames', 4);
+			if(!$element.attr('frame-duration'))
+			{
+				$element.attr('frame-duration', '0.2s');
+			}
+		}
+		else
+		{
+			$element.attr('frames', 0);
+		}
+	}
+}
+update_character.attributes = ['class', 'direction'];
 function make_update_handler(update_fn)
 {
 	return function(event, element, attribute, old_value)
@@ -140,3 +176,4 @@ dom_control('.snapped', make_update_handler(update_snapped));
 dom_control('[layer]', make_update_handler(update_layered));
 dom_control('.sprite', make_update_handler(update_sprite));
 dom_control('.sprite[frames]', make_update_handler(update_sprite_animation));
+dom_control('.character', make_update_handler(update_character));
