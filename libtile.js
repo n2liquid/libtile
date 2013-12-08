@@ -30,10 +30,12 @@ function set_layer($element, layer)
 }
 function set_tile($element, x, y)
 {
+	var width = $element.width();
+	var height = $element.height();
 	$element.css
 	(
 		'background-position',
-		(-x * 32) + 'px ' + (-y * 32) + 'px'
+		(-x * width) + 'px ' + (-y * height) + 'px'
 	);
 }
 function update_ground(event, $element)
