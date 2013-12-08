@@ -8,16 +8,18 @@
 	position: relative;
 	overflow: hidden;
 }
-.snapped,
-.tile
+.snapped
 {
 	position: absolute;
 	width: 32px;
 	height: 32px;
 	box-sizing: border-box;
+}
+.sprite
+{
 	background-clip: border;
 }
-.tile.chara
+.sprite.chara
 {
 	background-image: url('chara.png');
 }

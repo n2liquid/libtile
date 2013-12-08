@@ -28,7 +28,7 @@ function set_layer($element, layer)
 {
 	$element.css('z-index', layer);
 }
-function set_tile($element, x, y)
+function set_sprite($element, x, y)
 {
 	var width = $element.width();
 	var height = $element.height();
@@ -58,24 +58,24 @@ function update_layered(event, $element)
 	set_layer($element, layer);
 }
 update_layered.attributes = ['layer'];
-function update_tile(event, $element, attribute, old_value, force_set)
+function update_sprite(event, $element, attribute, old_value, force_set)
 {
-	var tx = $element.attr('tx') || 0;
-	var ty = $element.attr('ty') || 0;
+	var sx = $element.attr('sx') || 0;
+	var sy = $element.attr('sy') || 0;
 	if($element.data('animating') && !force_set)
 	{
 		return;
 	}
-	set_tile($element, tx, ty);
+	set_sprite($element, sx, sy);
 }
-update_tile.attributes = ['tx', 'ty'];
-function update_snapped_layered_tile(event, $element)
+update_sprite.attributes = ['sx', 'sy'];
+function update_snapped_layered_sprite(event, $element)
 {
 	update_snapped(event, $element);
 	update_layered(event, $element);
-	update_tile(event, $element);
+	update_sprite(event, $element);
 }
-update_snapped_layered_tile.attributes = ['x', 'y', 'layer', 'tx', 'ty'];
+update_snapped_layered_sprite.attributes = ['x', 'y', 'layer', 'sx', 'sy'];
 function calculate_transition_duration($element)
 {
 	var frames = $element.attr('frames');
@@ -84,11 +84,11 @@ function calculate_transition_duration($element)
 	var frame_duration_scalar = parseFloat(frame_duration) || 0;
 	return (frame_duration_scalar * frames) + frame_duration_unit;
 }
-function update_tile_animation(event, $element)
+function update_sprite_animation(event, $element)
 {
 	if(!$element.data('animating'))
 	{
-		$element.on('transitionend.animated-tile', update_tile_animation.bind(null, event, $element));
+		$element.on('transitionend.animated-sprite', update_sprite_animation.bind(null, event, $element));
 	}
 	try
 	{
@@ -96,7 +96,7 @@ function update_tile_animation(event, $element)
 		var sheet_orientation = $element.attr('sheet-orientation') || 'horizontal';
 		var transition_duration = calculate_transition_duration($element);
 		$element.css('transition', 'background-position 0s');
-		update_tile(event, $element, null, null, true);
+		update_sprite(event, $element, null, null, true);
 		console.log('set');
 		$element.css('background-position'); // force "flush"
 		if(parseFloat(transition_duration) === 0)
@@ -122,11 +122,11 @@ function update_tile_animation(event, $element)
 	catch(e)
 	{
 		console.error(e);
-		$element.off('animated-tile');
+		$element.off('animated-sprite');
 		$element.data('animating', false);
 	}
 }
-update_tile_animation.attributes = ['tx', 'ty', 'frames', 'frame-duration', 'sheet-orientation'];
+update_sprite_animation.attributes = ['sx', 'sy', 'frames', 'frame-duration', 'sheet-orientation'];
 function make_update_handler(update_fn)
 {
 	return function(event, element, attribute, old_value)
@@ -145,5 +145,5 @@ function make_update_handler(update_fn)
 dom_control('.ground', make_update_handler(update_ground));
 dom_control('.snapped', make_update_handler(update_snapped));
 dom_control('.layered', make_update_handler(update_layered));
-dom_control('.tile', make_update_handler(update_snapped_layered_tile));
-dom_control('.tile[frames]', make_update_handler(update_tile_animation));
+dom_control('.sprite', make_update_handler(update_snapped_layered_sprite));
+dom_control('.sprite[frames]', make_update_handler(update_sprite_animation));
