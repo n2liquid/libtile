@@ -137,6 +137,6 @@ function make_update_handler(update_fn)
 }
 dom_control('.ground', make_update_handler(update_ground));
 dom_control('.snapped', make_update_handler(update_snapped));
-dom_control('.layered', make_update_handler(update_layered));
+dom_control('[layer]', make_update_handler(update_layered));
 dom_control('.sprite', make_update_handler(update_sprite));
 dom_control('.sprite[frames]', make_update_handler(update_sprite_animation));
