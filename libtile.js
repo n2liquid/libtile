@@ -69,13 +69,6 @@ function update_sprite(event, $element, attribute, old_value, force_set)
 	set_sprite($element, sx, sy);
 }
 update_sprite.attributes = ['sx', 'sy'];
-function update_snapped_layered_sprite(event, $element)
-{
-	update_snapped(event, $element);
-	update_layered(event, $element);
-	update_sprite(event, $element);
-}
-update_snapped_layered_sprite.attributes = ['x', 'y', 'layer', 'sx', 'sy'];
 function calculate_transition_duration($element)
 {
 	var frames = $element.attr('frames');
@@ -145,5 +138,5 @@ function make_update_handler(update_fn)
 dom_control('.ground', make_update_handler(update_ground));
 dom_control('.snapped', make_update_handler(update_snapped));
 dom_control('.layered', make_update_handler(update_layered));
-dom_control('.sprite', make_update_handler(update_snapped_layered_sprite));
+dom_control('.sprite', make_update_handler(update_sprite));
 dom_control('.sprite[frames]', make_update_handler(update_sprite_animation));
