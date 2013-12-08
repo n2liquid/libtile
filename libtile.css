@@ -19,7 +19,9 @@
 {
 	background-clip: border;
 }
-.sprite.chara
+.sprite.tall
 {
-	background-image: url('chara.png');
+	height: 48px;
+	margin-top: -16px;
+	background-image: url('http://i.imgur.com/EUdDa8b.png');
 }
