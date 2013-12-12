@@ -261,28 +261,44 @@ setInterval
 		switch(arrows_stack[arrows_stack.length - 1])
 		{
 			case arrow_down:
-				character.attr('y', ++y);
+				++y;
+				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
+				{
+					character.attr('y', y);
+				}
 				if(direction !== 'down')
 				{
 					character.attr('direction', 'down');
 				}
 				break;
 			case arrow_left:
-				character.attr('x', --x);
+				--x;
+				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
+				{
+					character.attr('x', x);
+				}
 				if(direction !== 'left')
 				{
 					character.attr('direction', 'left');
 				}
 				break;
 			case arrow_right:
-				character.attr('x', ++x);
+				++x;
+				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
+				{
+					character.attr('x', x);
+				}
 				if(direction !== 'right')
 				{
 					character.attr('direction', 'right');
 				}
 				break;
 			case arrow_up:
-				character.attr('y', --y);
+				--y;
+				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
+				{
+					character.attr('y', y);
+				}
 				if(direction !== 'up')
 				{
 					character.attr('direction', 'up');
