@@ -90,7 +90,6 @@ function update_sprite_animation(event, $element)
 		var transition_duration = calculate_transition_duration($element);
 		$element.css('transition', 'background-position 0s');
 		update_sprite(event, $element, null, null, true);
-		console.log('set');
 		$element.css('background-position'); // force "flush"
 		if(parseFloat(transition_duration) === 0)
 		{
@@ -177,3 +176,119 @@ dom_control('[layer]', make_update_handler(update_layered));
 dom_control('.sprite', make_update_handler(update_sprite));
 dom_control('.sprite[frames]', make_update_handler(update_sprite_animation));
 dom_control('.character', make_update_handler(update_character));
+var key_states = new Array(256);
+var arrow_down = 40;
+var arrow_left = 37;
+var arrow_right = 39;
+var arrow_up = 38;
+var arrow_keys = [arrow_down, arrow_left, arrow_right, arrow_up];
+function is_arrow_key(key)
+{
+	return (arrow_keys.indexOf(key) !== -1);
+}
+$(document).on
+(
+	'keydown keyup', function(event)
+	{
+		var $target = $(event.target);
+		switch(event.type)
+		{
+			case 'keydown':
+				var previous_key_state = key_states[event.which];
+				key_states[event.which] = 1;
+				if(!previous_key_state)
+				{
+					$target.trigger('proper-keydown', event);
+				}
+				break;
+			case 'keyup':
+				key_states[event.which] = 0;
+				break;
+		}
+		if(is_arrow_key(event.which))
+		{
+			event.preventDefault();
+		}
+	}
+);
+var arrows_stack = [];
+$(document).on
+(
+	'proper-keydown', function(event, original_event)
+	{
+		if(!is_arrow_key(original_event.which))
+		{
+			return;
+		}
+		arrows_stack.push(original_event.which);
+	}
+);
+$(document).keyup
+(
+	function(event)
+	{
+		if(!is_arrow_key(event.which))
+		{
+			return;
+		}
+		var index = arrows_stack.indexOf(event.which);
+		arrows_stack.splice(index, 1);
+	}
+);
+setInterval
+(
+	function()
+	{
+		if(arrows_stack.length === 0)
+		{
+			return;
+		}
+		var character = $('.character');
+		var background_position_mod_32 = character.css('background-position').split(' ').map
+		(
+			function(value)
+			{
+				return parseInt(value) % 32;
+			}
+		);
+		if(background_position_mod_32[0] && background_position_mod_32[1])
+		{
+			return;
+		}
+		var x = character.attr('x');
+		var y = character.attr('y');
+		var direction = character.attr('direction');
+		switch(arrows_stack[arrows_stack.length - 1])
+		{
+			case arrow_down:
+				character.attr('y', ++y);
+				if(direction !== 'down')
+				{
+					character.attr('direction', 'down');
+				}
+				break;
+			case arrow_left:
+				character.attr('x', --x);
+				if(direction !== 'left')
+				{
+					character.attr('direction', 'left');
+				}
+				break;
+			case arrow_right:
+				character.attr('x', ++x);
+				if(direction !== 'right')
+				{
+					character.attr('direction', 'right');
+				}
+				break;
+			case arrow_up:
+				character.attr('y', --y);
+				if(direction !== 'up')
+				{
+					character.attr('direction', 'up');
+				}
+				break;
+		}
+	},
+	50
+);
