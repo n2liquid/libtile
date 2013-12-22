@@ -1,0 +1,246 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+	*
+	{
+		box-sizing: border-box;
+	}
+	.character
+	{
+		position: relative;
+		width: 32px;
+		height: 48px;
+		background-color: lightblue;
+	}
+</style>
+<script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+var key_states = new Array(256);
+var arrow_down = 40;
+var arrow_left = 37;
+var arrow_right = 39;
+var arrow_up = 38;
+function is_arrow_key(key)
+{
+	var arrow_keys = [arrow_down, arrow_left, arrow_right, arrow_up];
+	return (arrow_keys.indexOf(key) !== -1);
+}
+$(document).on
+(
+	'keydown keyup', function(event)
+	{
+		var $target = $(event.target);
+		switch(event.type)
+		{
+			case 'keydown':
+				var previous_key_state = key_states[event.which];
+				key_states[event.which] = 1;
+				if(!previous_key_state)
+				{
+					$target.trigger('proper-keydown', event);
+				}
+				break;
+			case 'keyup':
+				key_states[event.which] = 0;
+				break;
+		}
+		if(is_arrow_key(event.which))
+		{
+			event.preventDefault();
+		}
+	}
+);
+var arrows_stack = [];
+$(document).on
+(
+	'proper-keydown', function(event, original_event)
+	{
+		if(!is_arrow_key(original_event.which))
+		{
+			return;
+		}
+		arrows_stack.push(original_event.which);
+	}
+);
+$(document).keyup
+(
+	function(event)
+	{
+		if(!is_arrow_key(event.which))
+		{
+			return;
+		}
+		var index = arrows_stack.indexOf(event.which);
+		arrows_stack.splice(index, 1);
+	}
+);
+function SnappedMovementController()
+{
+	this.requests = [];
+	requestAnimationFrame(this.frame_callback.bind(this));
+}
+SnappedMovementController.prototype._initialize_request_if_not_yet = function(request, i)
+{
+	var $element = request.$element;
+	var movement_ns = $element.data('namespaces').movement;
+	if(!movement_ns.initialized)
+	{
+		movement_ns.distance_traveled = 0;
+		movement_ns.origin =
+		{
+			x: parseInt($element.attr('x')),
+			y: parseInt($element.attr('y'))
+		};
+		movement_ns.target = {};
+		switch(request.direction)
+		{
+			case 'down':
+				movement_ns.axis = 'y';
+				movement_ns.target.x = movement_ns.origin.x;
+				movement_ns.target.y = movement_ns.origin.y + 1;
+				break;
+			case 'left':
+				movement_ns.axis = 'x';
+				movement_ns.target.x = movement_ns.origin.x - 1;
+				movement_ns.target.y = movement_ns.origin.y;
+				break;
+			case 'up':
+				movement_ns.axis = 'y';
+				movement_ns.target.x = movement_ns.origin.x;
+				movement_ns.target.y = movement_ns.origin.y - 1;
+				break;
+			case 'right':
+				movement_ns.axis = 'x';
+				movement_ns.target.x = movement_ns.origin.x + 1;
+				movement_ns.target.y = movement_ns.origin.y;
+				break;
+			default:
+				console.log(request.promise_resolver);
+				request.promise_resolver.reject
+				(
+					new Error
+					(
+						"Invalid direction ('" + request.direction + ".')"
+					)
+				);
+				this._request_resolved(i);
+				return false;
+		}
+		$element.attr('tx', movement_ns.target.x);
+		$element.attr('ty', movement_ns.target.y);
+		movement_ns.initialized = true;
+	}
+	return true;
+};
+SnappedMovementController.prototype._request_resolved = function(index)
+{
+	var $element = this.requests[index].$element;
+	var element_namespaces = $element.data('namespaces');
+	var movement_ns = element_namespaces.movement;
+	$element.attr('x', movement_ns.target.x);
+	$element.attr('y', movement_ns.target.y);
+	$element.removeAttr('tx');
+	$element.removeAttr('ty');
+	delete $element.data('namespaces').movement;
+	this.requests.splice(index, 1);
+};
+SnappedMovementController.prototype._update_timestamps = function(timestamp)
+{
+	var previous = this.latest_timestamp;
+	this.latest_timestamp = timestamp;
+	return previous;
+};
+SnappedMovementController.prototype.frame_callback = function(timestamp)
+{
+	requestAnimationFrame(this.frame_callback.bind(this));
+	timestamp = timestamp || 0;
+	var previous_timestamp = this._update_timestamps(timestamp);
+	var timestamp_delta = timestamp - previous_timestamp;
+	var second_multiplier = timestamp_delta / 1000;
+	this.requests.forEach
+	(
+		function(request, i)
+		{
+			if(!this._initialize_request_if_not_yet(request, i))
+			{
+				return;
+			}
+			var $element = request.$element;
+			var movement_ns = $element.data('namespaces').movement;
+			var axis = movement_ns.axis;
+			var target_on_axis = movement_ns.target[axis];
+			var origin_on_axis = movement_ns.origin[axis];
+			var frame_offset_on_axis = (target_on_axis - origin_on_axis) * 32 * second_multiplier * 1.4;
+			var distance_traveled = movement_ns.distance_traveled += Math.abs(frame_offset_on_axis);
+			if(distance_traveled > 32)
+			{
+				distance_traveled = movement_ns.distance_traveled = 32;
+			}
+			var total_offset_on_axis = Math.floor(distance_traveled) * Math.sign(frame_offset_on_axis);
+			$element.css
+			(
+				{ x: 'left', y: 'top' }[axis],
+				((origin_on_axis * 32) + total_offset_on_axis) + 'px'
+			);
+			if(distance_traveled >= 32)
+			{
+				request.promise_resolver.resolve();
+				this._request_resolved(i);
+			}
+		},
+		this
+	);
+};
+SnappedMovementController.prototype.move = function($element, direction)
+{
+	var movement_controller = this;
+	var element_namespaces
+			= $element.data('namespaces')
+			|| $element.data('namespaces', {}).data('namespaces');
+	if(element_namespaces.movement)
+	{
+		return Promise.reject(new Error('Element already moving.'));
+	}
+	element_namespaces.movement = {};
+	return new Promise
+	(
+		function(resolve, reject)
+		{
+			movement_controller.requests.push
+			({
+				$element: $element,
+				direction: direction,
+				promise_resolver: { resolve: resolve, reject: reject }
+			});
+		}
+	);
+};
+var movement_controller = new SnappedMovementController();
+window.move_snapped = movement_controller.move.bind(movement_controller);
+var moving = false;
+(
+	function input_frame()
+	{
+		requestAnimationFrame(input_frame);
+		if(moving || arrows_stack.length === 0)
+		{
+			return;
+		}
+		moving = true;
+		function reset_moving_flag()
+		{
+			moving = false;
+		}
+		var latest_arrow = arrows_stack[arrows_stack.length - 1];
+		var directions = {};
+		directions[arrow_down] = 'down';
+		directions[arrow_left] = 'left';
+		directions[arrow_up] = 'up';
+		directions[arrow_right] = 'right';
+		move_snapped($('.character'), directions[latest_arrow])
+			.then(reset_moving_flag)
+			.catch(reset_moving_flag);
+	}
+)();
+</script>
+<div class="character" x="0" y="0"></div>
