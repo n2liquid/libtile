@@ -119,9 +119,19 @@ function update_sprite_animation(event, $element)
 	}
 }
 update_sprite_animation.attributes = ['sx', 'sy', 'frames', 'frame-duration', 'sheet-orientation'];
-var t = 0;
 function update_character(event, $element, attribute, old_value)
 {
+	if(event === 'added'|| event === 'exists')
+	{
+		if(!$element.data('api'))
+		{
+			$element.data('api', {});
+		}
+		$element.data('api').character =
+		{
+			$element: $element,
+		};
+	}
 	if(event === 'added' || event === 'exists' || attribute === 'direction')
 	{
 		var direction = $element.attr('direction');
@@ -181,9 +191,9 @@ var arrow_down = 40;
 var arrow_left = 37;
 var arrow_right = 39;
 var arrow_up = 38;
-var arrow_keys = [arrow_down, arrow_left, arrow_right, arrow_up];
 function is_arrow_key(key)
 {
+	var arrow_keys = [arrow_down, arrow_left, arrow_right, arrow_up];
 	return (arrow_keys.indexOf(key) !== -1);
 }
 $(document).on
@@ -235,76 +245,185 @@ $(document).keyup
 		arrows_stack.splice(index, 1);
 	}
 );
-setInterval
-(
-	function()
+function SnappedMovementController()
+{
+	this.requests = [];
+	requestAnimationFrame(this.frame_callback.bind(this));
+}
+SnappedMovementController.prototype._initialize_request_if_not_yet = function(request)
+{
+	var $element = request.$element;
+	var movement_ns = $element.data('namespaces').movement;
+	if(!movement_ns.initialized)
 	{
-		if(arrows_stack.length === 0)
+		movement_ns.distance_traveled = 0;
+		movement_ns.origin =
 		{
-			return;
+			x: parseInt($element.attr('x')),
+			y: parseInt($element.attr('y'))
+		};
+		movement_ns.target = {};
+		switch(request.direction)
+		{
+			case 'down':
+				movement_ns.axis = 'y';
+				movement_ns.target.x = movement_ns.origin.x;
+				movement_ns.target.y = movement_ns.origin.y + 1;
+				break;
+			case 'left':
+				movement_ns.axis = 'x';
+				movement_ns.target.x = movement_ns.origin.x - 1;
+				movement_ns.target.y = movement_ns.origin.y;
+				break;
+			case 'up':
+				movement_ns.axis = 'y';
+				movement_ns.target.x = movement_ns.origin.x;
+				movement_ns.target.y = movement_ns.origin.y - 1;
+				break;
+			case 'right':
+				movement_ns.axis = 'x';
+				movement_ns.target.x = movement_ns.origin.x + 1;
+				movement_ns.target.y = movement_ns.origin.y;
+				break;
+			default:
+				throw new Error("Invalid direction ('" + request.direction + ".')");
 		}
-		var character = $('.character');
-		var background_position_mod_32 = character.css('background-position').split(' ').map
-		(
-			function(value)
+		if($('[x="' + movement_ns.target.x + '"][y="' + movement_ns.target.y + '"]').length > 0)
+		{
+			throw new Error("Collision.");
+		}
+		$element.attr('tx', movement_ns.target.x);
+		$element.attr('ty', movement_ns.target.y);
+		movement_ns.speed = parseFloat($element.attr('speed')) || 2.5;
+		movement_ns.initialized = true;
+	}
+};
+SnappedMovementController.prototype._request_resolved = function(index)
+{
+	var $element = this.requests[index].$element;
+	var element_namespaces = $element.data('namespaces');
+	var movement_ns = element_namespaces.movement;
+	$element.removeAttr('tx');
+	$element.removeAttr('ty');
+	delete $element.data('namespaces').movement;
+	this.requests.splice(index, 1);
+};
+SnappedMovementController.prototype._update_timestamps = function(timestamp)
+{
+	var previous = this.latest_timestamp;
+	this.latest_timestamp = timestamp;
+	return previous;
+};
+SnappedMovementController.prototype.frame_callback = function(timestamp)
+{
+	requestAnimationFrame(this.frame_callback.bind(this));
+	timestamp = timestamp || 0;
+	var tile_size = 32;
+	var previous_timestamp = this._update_timestamps(timestamp);
+	var timestamp_delta = timestamp - previous_timestamp;
+	var second_multiplier = timestamp_delta / 1000;
+	this.requests.forEach
+	(
+		function(request, i)
+		{
+			try
 			{
-				return parseInt(value) % 32;
+				this._initialize_request_if_not_yet(request);
+				var $element = request.$element;
+				var movement = $element.data('namespaces').movement;
+				var target = movement.target[movement.axis];
+				var origin = movement.origin[movement.axis];
+				var final_offset = (target - origin) * tile_size;
+				var frame_offset = final_offset * movement.speed * second_multiplier;
+				movement.distance_traveled += Math.abs(frame_offset);
+				var final_distance = Math.abs(final_offset);
+				if(movement.distance_traveled >= final_distance)
+				{
+					movement.distance_traveled = final_distance;
+				}
+				var current_offset = Math.floor(movement.distance_traveled) * Math.sign(final_offset);
+				$element.css
+				(
+					{ x: 'left', y: 'top' }[movement.axis],
+					((origin * tile_size) + current_offset) + 'px'
+				);
+				if(movement.distance_traveled >= final_distance)
+				{
+					$element.attr(movement.axis, movement.target[movement.axis]);
+					request.promise_resolver.resolve();
+					this._request_resolved(i);
+				}
 			}
-		);
-		if(background_position_mod_32[0] && background_position_mod_32[1])
+			catch(error)
+			{
+				request.promise_resolver.reject(error);
+				this._request_resolved(i);
+			}
+		},
+		this
+	);
+};
+SnappedMovementController.prototype.move = function($element, direction)
+{
+	var movement_controller = this;
+	var element_namespaces
+			= $element.data('namespaces')
+			|| $element.data('namespaces', {}).data('namespaces');
+	if(element_namespaces.movement)
+	{
+		return Promise.reject(new Error('Element already moving.'));
+	}
+	element_namespaces.movement = {};
+	return new Promise
+	(
+		function(resolve, reject)
+		{
+			movement_controller.requests.push
+			({
+				$element: $element,
+				direction: direction,
+				promise_resolver: { resolve: resolve, reject: reject }
+			});
+		}
+	);
+};
+var movement_controller = new SnappedMovementController();
+window.move_snapped = movement_controller.move.bind(movement_controller);
+var moving = false;
+var directions = {};
+directions[arrow_down] = 'down';
+directions[arrow_left] = 'left';
+directions[arrow_up] = 'up';
+directions[arrow_right] = 'right';
+(
+	function input_frame()
+	{
+		requestAnimationFrame(input_frame);
+		if(moving || arrows_stack.length === 0)
 		{
 			return;
 		}
-		var x = character.attr('x');
-		var y = character.attr('y');
-		var direction = character.attr('direction');
-		switch(arrows_stack[arrows_stack.length - 1])
+		moving = true;
+		var pc = $('.pc');
+		function reset_moving_flag(error)
 		{
-			case arrow_down:
-				++y;
-				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
-				{
-					character.attr('y', y);
-				}
-				if(direction !== 'down')
-				{
-					character.attr('direction', 'down');
-				}
-				break;
-			case arrow_left:
-				--x;
-				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
-				{
-					character.attr('x', x);
-				}
-				if(direction !== 'left')
-				{
-					character.attr('direction', 'left');
-				}
-				break;
-			case arrow_right:
-				++x;
-				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
-				{
-					character.attr('x', x);
-				}
-				if(direction !== 'right')
-				{
-					character.attr('direction', 'right');
-				}
-				break;
-			case arrow_up:
-				--y;
-				if($('[x="' + x + '"][y="' + y + '"]').length === 0)
-				{
-					character.attr('y', y);
-				}
-				if(direction !== 'up')
-				{
-					character.attr('direction', 'up');
-				}
-				break;
+			if(error || arrows_stack.length === 0)
+			{
+				pc.removeClass('walking');
+			}
+			moving = false;
 		}
-	},
-	50
-);
+		var latest_arrow = arrows_stack[arrows_stack.length - 1];
+		var direction = directions[latest_arrow];
+		move_snapped(pc, direction)
+			.then(reset_moving_flag, reset_moving_flag);
+		if(pc.attr('direction') !== direction)
+		{
+			pc.attr('direction', direction);
+		}
+		if(!pc.hasClass('walking'))
+		{
+			pc.addClass('walking');
+		}
+	}
+)();
