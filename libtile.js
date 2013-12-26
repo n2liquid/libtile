@@ -14,20 +14,42 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-function update_ground(event, $element)
+function update_ground(event, $element, attribute)
 {
-	var width = $element.attr('width') || 1;
-	var height = $element.attr('height') || 1;
-	$element.css('width', (width * 32) + 'px');
-	$element.css('height', (height * 32) + 'px');
+	switch(event)
+	{
+		case 'exists':
+		case 'added':
+			update_ground('set-attribute', $element, 'width');
+			update_ground('set-attribute', $element, 'height');
+			break;
+		case 'set-attribute':
+		case 'mutated':
+			var value = $element.attr(attribute) || 1;
+			$element.css(attribute, (value * 32) + 'px');
+			break;
+	}
 }
 update_ground.attributes = ['width', 'height'];
-function update_snapped(event, $element, attribute, old_value)
+function update_snapped(event, $element, attribute)
 {
-	var x = $element.attr('x') || 0;
-	var y = $element.attr('y') || 0;
-	$element.css('left', (x * 32) + 'px');
-	$element.css('top', (y * 32) + 'px');
+	switch(event)
+	{
+		case 'exists':
+		case 'added':
+			update_snapped('set-attribute', $element, 'x');
+			update_snapped('set-attribute', $element, 'y');
+			break;
+		case 'set-attribute':
+		case 'mutated':
+			var value = $element.attr(attribute) || 0;
+			$element.css
+			(
+				{ x: 'left', y: 'top' }[attribute],
+				(value * 32) + 'px'
+			);
+			break;
+	}
 }
 update_snapped.attributes = ['x', 'y'];
 function update_layered(event, $element)
