@@ -14,48 +14,26 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-function set_ground_size($element, width, height)
-{
-	$element.css('width', (width * 32) + 'px');
-	$element.css('height', (height * 32) + 'px');
-}
-function set_position($element, x, y, layer)
-{
-	$element.css('left', (x * 32) + 'px');
-	$element.css('top', (y * 32) + 'px');
-}
-function set_layer($element, layer)
-{
-	$element.css('z-index', layer);
-}
-function set_sprite($element, x, y)
-{
-	var width = $element.width();
-	var height = $element.height();
-	$element.css
-	(
-		'background-position',
-		(-x * width) + 'px ' + (-y * height) + 'px'
-	);
-}
 function update_ground(event, $element)
 {
 	var width = $element.attr('width') || 1;
 	var height = $element.attr('height') || 1;
-	set_ground_size($element, width, height);
+	$element.css('width', (width * 32) + 'px');
+	$element.css('height', (height * 32) + 'px');
 }
 update_ground.attributes = ['width', 'height'];
 function update_snapped(event, $element, attribute, old_value)
 {
 	var x = $element.attr('x') || 0;
 	var y = $element.attr('y') || 0;
-	set_position($element, x, y);
+	$element.css('left', (x * 32) + 'px');
+	$element.css('top', (y * 32) + 'px');
 }
 update_snapped.attributes = ['x', 'y'];
 function update_layered(event, $element)
 {
 	var layer = $element.attr('layer') || 0;
-	set_layer($element, layer);
+	$element.css('z-index', layer);
 }
 update_layered.attributes = ['layer'];
 function update_sprite(event, $element, attribute, old_value, force_set)
@@ -66,7 +44,15 @@ function update_sprite(event, $element, attribute, old_value, force_set)
 	{
 		return;
 	}
-	set_sprite($element, sx, sy);
+	$element.css
+	(
+		'background-position',
+		[
+			(-sx * $element.width()) + 'px',
+			(-sy * $element.height()) + 'px'
+		]
+		.join(' ')
+	);
 }
 update_sprite.attributes = ['sx', 'sy'];
 function calculate_transition_duration($element)
