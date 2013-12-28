@@ -1,0 +1,11 @@
+x Sprite rendering.
+	~ Sprite animations.
+	x Repeating.
+	o One-shot.
+	o Event firing (start / stop, maybe frame.)
+o Custom element APIs.
+	o Functions for element namespaces.
+~ Movement.
+	~ Input handling.
+	x Move down / left / up / right.
+	o Paths.
